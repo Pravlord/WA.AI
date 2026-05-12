@@ -2,24 +2,30 @@ import { useMemo, useState } from "react";
 import type { FileRegistryEntry } from "../../../../shared/fileRegistry";
 import type { WorkspaceProcessRun } from "../../../../shared/processRunner";
 import type { Workspace } from "../../../../shared/workspace";
+import type { CoordinatorCommandResult } from "../../agents/coordinatorAgent";
 import { searchFileRegistry } from "../../file-registry/fileRegistrySearch";
 
 type ChatTab = "chat" | "plan" | "runs";
 
 type WorkspaceWorkbenchProps = {
+  coordinatorResults: CoordinatorCommandResult[];
   files: FileRegistryEntry[];
   processRuns: WorkspaceProcessRun[];
   workspace: Workspace;
+  onSubmitCommand: (command: string) => CoordinatorCommandResult | null;
   onRefreshRegistry: () => void;
 };
 
 export function WorkspaceWorkbench({
+  coordinatorResults,
   files,
   processRuns,
   workspace,
+  onSubmitCommand,
   onRefreshRegistry
 }: WorkspaceWorkbenchProps) {
   const [query, setQuery] = useState("");
+  const [command, setCommand] = useState("");
   const [openFiles, setOpenFiles] = useState<FileRegistryEntry[]>([]);
   const [activeFileId, setActiveFileId] = useState<string | null>(null);
   const [activeChatTab, setActiveChatTab] = useState<ChatTab>("chat");
@@ -42,6 +48,22 @@ export function WorkspaceWorkbench({
       const remainingFiles = openFiles.filter((file) => file.id !== fileId);
       setActiveFileId(remainingFiles[0]?.id ?? null);
     }
+  }
+
+  function handleSubmitCommand() {
+    const trimmedCommand = command.trim();
+
+    if (!trimmedCommand) {
+      return;
+    }
+
+    const result = onSubmitCommand(trimmedCommand);
+
+    if (result) {
+      setActiveChatTab("plan");
+    }
+
+    setCommand("");
   }
 
   return (
@@ -152,11 +174,26 @@ export function WorkspaceWorkbench({
           </button>
         </nav>
         <div className="chat-body">
-          <ChatTabContent activeTab={activeChatTab} processRuns={processRuns} workspace={workspace} />
+          <ChatTabContent
+            activeTab={activeChatTab}
+            coordinatorResults={coordinatorResults}
+            processRuns={processRuns}
+            workspace={workspace}
+          />
         </div>
         <div className="chat-input-shell">
-          <textarea placeholder="Ask WA.AI to inspect, plan, automate, or explain this workspace." />
-          <button className="primary-button" type="button">
+          <textarea
+            placeholder="Ask WA.AI to inspect, plan, automate, or explain this workspace."
+            value={command}
+            onChange={(event) => setCommand(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+                event.preventDefault();
+                handleSubmitCommand();
+              }
+            }}
+          />
+          <button className="primary-button" type="button" onClick={handleSubmitCommand}>
             Send
           </button>
         </div>
@@ -203,16 +240,42 @@ function FilePreview({ file, workspace }: FilePreviewProps) {
 
 type ChatTabContentProps = {
   activeTab: ChatTab;
+  coordinatorResults: CoordinatorCommandResult[];
   processRuns: WorkspaceProcessRun[];
   workspace: Workspace;
 };
 
-function ChatTabContent({ activeTab, processRuns, workspace }: ChatTabContentProps) {
+function ChatTabContent({ activeTab, coordinatorResults, processRuns, workspace }: ChatTabContentProps) {
+  const latestResult = coordinatorResults[0] ?? null;
+
   if (activeTab === "plan") {
     return (
-      <div className="chat-message">
+      <div className="chat-message plan-result">
         <strong>Plan</strong>
-        <p>Plans will show proposed steps, approvals, and dry-run output for {workspace.name}.</p>
+        {latestResult ? (
+          <>
+            <p>{latestResult.message}</p>
+            <article className="coordinator-plan-card">
+              <span>{latestResult.runTitle}</span>
+              <small>
+                {latestResult.safetyActionIds.length} proposed action
+                {latestResult.safetyActionIds.length === 1 ? "" : "s"} - open Process Graph to inspect nodes
+              </small>
+            </article>
+            <div className="tool-use-list">
+              {latestResult.toolUses.map((toolUse) => (
+                <details key={toolUse.id}>
+                  <summary>
+                    {toolUse.label} <span>{toolUse.name}</span>
+                  </summary>
+                  <p>{toolUse.output}</p>
+                </details>
+              ))}
+            </div>
+          </>
+        ) : (
+          <p>Plans will show proposed steps, approvals, and dry-run output for {workspace.name}.</p>
+        )}
       </div>
     );
   }
@@ -238,9 +301,20 @@ function ChatTabContent({ activeTab, processRuns, workspace }: ChatTabContentPro
   }
 
   return (
-    <div className="chat-message">
-      <strong>WA.AI</strong>
-      <p>Ready to help with this workspace. Open files on the left, then ask for a plan or action.</p>
+    <div className="chat-thread">
+      <div className="chat-message">
+        <strong>WA.AI</strong>
+        <p>Ready to help with this workspace. Open files on the left, then ask for a plan or action.</p>
+      </div>
+      {coordinatorResults.map((result) => (
+        <article className="chat-message coordinator-result" key={result.id}>
+          <strong>You</strong>
+          <p>{result.command}</p>
+          <strong>Coordinator</strong>
+          <p>{result.message}</p>
+          <small>{new Date(result.createdAt).toLocaleString()}</small>
+        </article>
+      ))}
     </div>
   );
 }

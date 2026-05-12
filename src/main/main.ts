@@ -31,11 +31,15 @@ function createMainWindow(): void {
   void window.loadFile(path.join(__dirname, "../renderer/index.html"));
 }
 
-ipcMain.handle(workspaceIpcChannels.selectFolder, async () => {
-  const result = await dialog.showOpenDialog({
+ipcMain.handle(workspaceIpcChannels.selectFolder, async (event) => {
+  const parentWindow = BrowserWindow.fromWebContents(event.sender);
+  const dialogOptions = {
     title: "Open workspace folder",
-    properties: ["openDirectory"]
-  });
+    properties: ["openDirectory" as const]
+  };
+  const result = parentWindow
+    ? await dialog.showOpenDialog(parentWindow, dialogOptions)
+    : await dialog.showOpenDialog(dialogOptions);
 
   if (result.canceled || result.filePaths.length === 0) {
     return null;

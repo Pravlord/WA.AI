@@ -4,6 +4,7 @@ import type { WorkspaceApi } from "../shared/workspaceApi";
 
 declare global {
   interface Window {
-    workspaceApi: WorkspaceApi;
+    /** Present only when the renderer runs inside Electron (preload). */
+    workspaceApi?: WorkspaceApi;
   }
 }

@@ -868,6 +868,44 @@ body {
   background: #171c26;
 }
 
+.chat-thread,
+.plan-result,
+.coordinator-result,
+.tool-use-list {
+  display: grid;
+  gap: 10px;
+}
+
+.coordinator-result small,
+.coordinator-plan-card small,
+.tool-use-list summary span {
+  color: #94a3b8;
+}
+
+.coordinator-plan-card,
+.tool-use-list details {
+  border: 1px solid #2a3141;
+  border-radius: 10px;
+  padding: 10px;
+  background: #10131a;
+}
+
+.coordinator-plan-card {
+  display: grid;
+  gap: 4px;
+}
+
+.tool-use-list summary {
+  cursor: pointer;
+  color: #d7dae0;
+  font-weight: 700;
+}
+
+.tool-use-list p {
+  margin-bottom: 0;
+  white-space: pre-wrap;
+}
+
 .chat-input-shell {
   display: grid;
   gap: 10px;
@@ -968,6 +1006,7 @@ body {
 .process-run-list,
 .process-run-summary,
 .process-step-composer,
+.runtime-graph,
 .process-history-panel,
 .process-empty-state {
   border-radius: 16px;
@@ -1037,6 +1076,103 @@ body {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
+}
+
+.runtime-graph {
+  border: 1px solid #2a3141;
+  background: #151923;
+}
+
+.runtime-graph-canvas {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.runtime-node {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  border: 1px solid #2a3141;
+  border-radius: 14px;
+  padding: 12px;
+  background: #10131a;
+}
+
+.runtime-node.node-agent {
+  border-color: rgba(56, 189, 248, 0.46);
+}
+
+.runtime-node.node-tool {
+  border-color: rgba(167, 139, 250, 0.45);
+}
+
+.runtime-node.node-approval {
+  border-color: rgba(251, 191, 36, 0.48);
+}
+
+.runtime-node-header {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+}
+
+.runtime-node-header small,
+.runtime-node-links span,
+.runtime-action small {
+  color: #94a3b8;
+}
+
+.runtime-node-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.runtime-node-links span,
+.runtime-action {
+  border-radius: 999px;
+  padding: 5px 8px;
+  background: rgba(59, 130, 246, 0.16);
+  font-size: 11px;
+}
+
+.runtime-node details {
+  border: 1px solid #252936;
+  border-radius: 10px;
+  padding: 8px;
+}
+
+.runtime-node summary {
+  cursor: pointer;
+  color: #bfdbfe;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.runtime-node pre {
+  overflow: auto;
+  margin: 8px 0 0;
+  white-space: pre-wrap;
+}
+
+.runtime-node-actions {
+  display: grid;
+  gap: 8px;
+}
+
+.runtime-action {
+  display: grid;
+  border-radius: 10px;
+}
+
+.runtime-action.risk-high {
+  background: rgba(127, 29, 29, 0.35);
+}
+
+.runtime-action.risk-medium {
+  background: rgba(120, 53, 15, 0.34);
 }
 
 .process-step-card {
@@ -1300,4 +1436,570 @@ body {
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 8px;
+}
+
+.universal-workspace-layout {
+  display: grid;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  color: #d7dae0;
+  background: #0f1117;
+}
+
+.universal-rail {
+  min-width: 0;
+  overflow: hidden;
+  background: #131720;
+}
+
+.explorer-rail {
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #252936;
+}
+
+.chat-rail {
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid #252936;
+}
+
+.universal-rail.collapsed {
+  visibility: hidden;
+}
+
+.global-splitter,
+.local-splitter {
+  position: relative;
+  z-index: 5;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: #0b0d12;
+  cursor: col-resize;
+}
+
+.global-splitter:hover,
+.local-splitter:hover {
+  background: #2563eb;
+}
+
+.main-rail,
+.main-block-composer,
+.editor-group {
+  min-width: 0;
+  min-height: 0;
+}
+
+.main-block-composer {
+  display: grid;
+  height: 100%;
+  gap: 6px;
+  background: #0b0d12;
+}
+
+.editor-group {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid transparent;
+  background: #10131a;
+}
+
+.editor-group.active {
+  border-color: rgba(56, 189, 248, 0.35);
+}
+
+.editor-group-actions {
+  display: flex;
+  margin-left: auto;
+}
+
+.editor-group-actions button,
+.dock-zones button {
+  border: 0;
+  border-left: 1px solid #252936;
+  padding: 0 8px;
+  color: #8b94a5;
+  background: transparent;
+  font-size: 11px;
+}
+
+.editor-group-actions button:hover,
+.dock-zones button:hover {
+  color: #ffffff;
+  background: #202636;
+}
+
+.dock-zones {
+  pointer-events: none;
+  position: absolute;
+  inset: 48px 12px auto auto;
+  z-index: 3;
+  display: flex;
+  gap: 6px;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.editor-group:has(.editor-tab[draggable="true"]:active) .dock-zones,
+.editor-group:hover .dock-zones {
+  opacity: 1;
+}
+
+.dock-zones button {
+  pointer-events: auto;
+  border: 1px dashed #3a4152;
+  border-radius: 8px;
+  padding: 6px 8px;
+  background: rgba(15, 23, 42, 0.8);
+}
+
+.blueprint-runner.process-runner {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow: hidden;
+  padding: 14px;
+}
+
+.blueprint-runner .process-runner-header {
+  flex: 0 0 auto;
+  margin-bottom: 0;
+}
+
+.blueprint-runner .process-runner-layout {
+  display: block;
+  min-height: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+.blueprint-runner .process-run-detail {
+  height: 100%;
+  min-height: 0;
+  grid-template-rows: auto auto minmax(320px, 1fr) auto;
+  overflow: hidden;
+}
+
+.blueprint-runner .process-run-summary {
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 260px) auto;
+}
+
+.process-graph-split {
+  display: grid;
+  min-height: 0;
+  gap: 6px;
+  overflow: hidden;
+}
+
+.runtime-graph {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+  border: 1px solid #2a3141;
+  border-radius: 16px;
+  padding: 12px;
+  background: #151923;
+}
+
+.graph-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.runtime-graph-canvas {
+  position: relative;
+  min-height: 0;
+  flex: 1;
+  overflow: hidden;
+  border: 1px solid #252936;
+  border-radius: 14px;
+  background:
+    linear-gradient(rgba(148, 163, 184, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.06) 1px, transparent 1px),
+    #0f1117;
+  background-size: 28px 28px;
+}
+
+.graph-add-block {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 4;
+  display: grid;
+  gap: 8px;
+  width: 220px;
+  height: 120px;
+  place-items: center;
+  transform: translate(-50%, -50%);
+  border: 1px dashed rgba(56, 189, 248, 0.7);
+  border-radius: 16px;
+  color: #bfdbfe;
+  background: rgba(15, 23, 42, 0.86);
+}
+
+.graph-add-block span {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 999px;
+  color: #07111f;
+  background: #67e8f9;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.runtime-node {
+  min-width: 220px;
+  max-width: 280px;
+  border: 1px solid #2a3141;
+  border-radius: 14px;
+  padding: 12px;
+  color: #d7dae0;
+  background: #10131a;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.26);
+  transition:
+    border-color 140ms ease,
+    box-shadow 140ms ease,
+    transform 140ms ease;
+}
+
+.runtime-node.selected {
+  border-color: #67e8f9;
+  box-shadow: 0 0 0 2px rgba(103, 232, 249, 0.18), 0 16px 42px rgba(0, 0, 0, 0.34);
+}
+
+.runtime-node.status-running {
+  border-color: rgba(56, 189, 248, 0.74);
+}
+
+.runtime-node.status-complete {
+  border-color: rgba(52, 211, 153, 0.58);
+  opacity: 0.76;
+}
+
+.runtime-node.status-failed,
+.runtime-node.status-blocked {
+  border-color: rgba(248, 113, 113, 0.72);
+}
+
+.runtime-node p {
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 0;
+  color: #9aa3b2;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.blueprint-handle {
+  width: 12px;
+  height: 12px;
+  border: 2px solid #0f1117;
+  background: #67e8f9;
+}
+
+.react-flow__edge-path {
+  stroke: #67e8f9;
+  stroke-width: 2;
+}
+
+.blueprint-edge.status-complete .react-flow__edge-path {
+  stroke: #34d399;
+}
+
+.blueprint-edge.status-failed .react-flow__edge-path,
+.blueprint-edge.status-blocked .react-flow__edge-path {
+  stroke: #f87171;
+}
+
+.node-inspector {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #2a3141;
+  border-radius: 16px;
+  background: #151923;
+}
+
+.node-inspector.hidden {
+  border: 0;
+}
+
+.node-inspector .local-splitter {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 6px;
+}
+
+.node-inspector-content {
+  display: grid;
+  gap: 12px;
+  height: 100%;
+  overflow: auto;
+  padding: 16px 16px 16px 22px;
+}
+
+.node-inspector h3 {
+  margin: 0;
+}
+
+.node-inspector label {
+  display: grid;
+  gap: 6px;
+  color: #cbd5e1;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.node-inspector textarea {
+  min-height: 96px;
+}
+
+.node-inspector-actions {
+  display: grid;
+  gap: 8px;
+}
+
+.process-history-panel.collapsed {
+  padding-bottom: 8px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+/* Interactive agent flowchart (process graph) */
+.visual-flowchart-shell {
+  display: flex;
+  height: 100%;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+  background: #1e212b;
+}
+
+.visual-flowchart-shell-empty {
+  min-height: 200px;
+}
+
+.visual-flowchart-shell-header {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid #2f3545;
+  padding: 10px 14px;
+  background: #252936;
+}
+
+.visual-flowchart-run-picker {
+  width: auto;
+  min-width: 72px;
+  min-height: 32px;
+  border: 1px solid #3d465a;
+  border-radius: 8px;
+  padding: 0 10px;
+  color: #e8ecf5;
+  background: #2f3548;
+}
+
+.visual-flowchart-shell-body {
+  flex: 1;
+  min-height: 0;
+}
+
+.visual-flowchart {
+  position: relative;
+  height: 100%;
+  min-height: 0;
+}
+
+.visual-flowchart-scroll {
+  height: 100%;
+  overflow: auto;
+  background-color: #2c3142;
+  background-image:
+    linear-gradient(rgba(94, 234, 212, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(94, 234, 212, 0.06) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+.visual-flowchart-surface {
+  position: relative;
+  transform-origin: 0 0;
+}
+
+.visual-flowchart-svg {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.flowchart-edge-hit {
+  pointer-events: stroke;
+  cursor: pointer;
+}
+
+.flowchart-edge-line {
+  stroke: #5eead4;
+  pointer-events: none;
+}
+
+.flowchart-edge-rubber {
+  stroke: rgba(94, 234, 212, 0.55);
+  pointer-events: none;
+}
+
+.flowchart-block {
+  position: absolute;
+  z-index: 2;
+  overflow: visible;
+  border-radius: 14px;
+  border: 1px solid rgba(94, 234, 212, 0.55);
+  background: linear-gradient(165deg, #353b50 0%, #2a3044 55%, #252b3d 100%);
+  box-shadow:
+    0 0 0 1px rgba(21, 26, 38, 0.85),
+    0 12px 28px rgba(0, 0, 0, 0.35);
+}
+
+.flowchart-block-header {
+  display: flex;
+  height: 100%;
+  cursor: grab;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 14px;
+  user-select: none;
+}
+
+.flowchart-block-header:active {
+  cursor: grabbing;
+}
+
+.flowchart-block-title {
+  color: #f1f5f9;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.flowchart-corner-handle {
+  position: absolute;
+  z-index: 4;
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  border: 2px solid #0f1117;
+  border-radius: 999px;
+  background: #5eead4;
+  cursor: crosshair;
+}
+
+.flowchart-corner-tl {
+  top: -7px;
+  left: -7px;
+}
+
+.flowchart-corner-tr {
+  top: -7px;
+  right: -7px;
+}
+
+.flowchart-corner-bl {
+  bottom: -7px;
+  left: -7px;
+}
+
+.flowchart-corner-br {
+  right: -7px;
+  bottom: -7px;
+}
+
+.flowchart-append-plus {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  z-index: 5;
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  padding: 0;
+  transform: translate(-50%, 50%);
+  border: 2px solid #1e293b;
+  border-radius: 999px;
+  color: #041015;
+  background: linear-gradient(145deg, #5eead4, #2dd4bf);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.flowchart-append-plus:hover {
+  filter: brightness(1.08);
+}
+
+.visual-flowchart-empty {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+}
+
+.visual-flowchart-empty-title {
+  margin: 0;
+  color: #f8fafc;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.visual-flowchart-empty .primary-button {
+  pointer-events: auto;
+}
+
+.flowchart-context-menu {
+  position: fixed;
+  z-index: 50;
+  border: 1px solid #3d465a;
+  border-radius: 10px;
+  padding: 6px;
+  background: #252936;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.45);
+}
+
+.flowchart-context-menu button {
+  display: block;
+  width: 100%;
+  border: 0;
+  border-radius: 8px;
+  padding: 8px 14px;
+  color: #e8ecf5;
+  background: transparent;
+  font-size: 13px;
+  text-align: left;
+}
+
+.flowchart-context-menu button:hover {
+  background: #343d52;
 }

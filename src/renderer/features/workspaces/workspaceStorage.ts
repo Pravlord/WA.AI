@@ -2,9 +2,12 @@ import type { FileRegistryEntry } from "../../../shared/fileRegistry";
 import type { WorkspaceProcessRun, WorkspaceProcessTemplate } from "../../../shared/processRunner";
 import type { Workspace } from "../../../shared/workspace";
 import type { WorkspaceSnapshot } from "../../../shared/workspaceSnapshot";
+import { normalizeWorkspaceLayout } from "../app-shell/appShellLayout";
 import {
   createHistoryEntry,
+  createDefaultProcessGraphLayout,
   createInitialProcessTemplates,
+  deriveGraphEdges,
   deriveProcessRunStatus,
   normalizeProcessRunStatus,
   normalizeProcessStepStatus
@@ -61,19 +64,45 @@ function normalizeWorkspaceSnapshot(snapshot: WorkspaceSnapshot): WorkspaceSnaps
     const now = run.updatedAt ?? run.createdAt ?? new Date().toISOString();
     const steps = (run.steps ?? []).map((step) => ({
       ...step,
+      kind: step.kind ?? "manual",
       status: normalizeProcessStepStatus(step.status),
       input: step.input ?? "",
       output: step.output ?? "",
       dependsOn: step.dependsOn ?? [],
+      proposedActionIds: step.proposedActionIds ?? [],
       createdAt: step.createdAt ?? now,
       updatedAt: step.updatedAt ?? now
     }));
+
+    const edges = (run.edges?.length ? run.edges : deriveGraphEdges(steps)).map((edge) => ({
+      ...edge,
+      sourcePort: edge.sourcePort ?? ("bl" as const),
+      targetPort: edge.targetPort ?? ("tl" as const)
+    }));
+    const graph = run.graph ?? createDefaultProcessGraphLayout(steps);
 
     return {
       ...run,
       templateId: run.templateId ?? null,
       status: steps.length > 0 ? deriveProcessRunStatus(steps) : normalizeProcessRunStatus(run.status),
       steps,
+      edges,
+      graph: {
+        ...createDefaultProcessGraphLayout(steps),
+        ...graph,
+        nodePositions: {
+          ...createDefaultProcessGraphLayout(steps).nodePositions,
+          ...graph.nodePositions
+        },
+        viewport: {
+          ...createDefaultProcessGraphLayout().viewport,
+          ...graph.viewport
+        },
+        canvasScroll: {
+          scrollLeft: graph.canvasScroll?.scrollLeft ?? 0,
+          scrollTop: graph.canvasScroll?.scrollTop ?? 0
+        }
+      },
       history:
         run.history?.length > 0
           ? run.history
@@ -87,6 +116,7 @@ function normalizeWorkspaceSnapshot(snapshot: WorkspaceSnapshot): WorkspaceSnaps
     ...snapshot,
     processRuns,
     processTemplates: snapshot.processTemplates ?? createInitialProcessTemplates(),
-    safety: snapshot.safety ?? createInitialSafetyState()
+    safety: snapshot.safety ?? createInitialSafetyState(),
+    layout: normalizeWorkspaceLayout(snapshot.layout)
   };
 }

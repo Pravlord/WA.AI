@@ -1,4 +1,7 @@
 import type {
+  ProcessGraphEdge,
+  ProcessGraphLayout,
+  ProcessStepKind,
   ProcessRunHistoryEntry,
   ProcessRunStatus,
   ProcessStepStatus,
@@ -7,37 +10,20 @@ import type {
   WorkspaceProcessTemplate
 } from "../../../shared/processRunner";
 
-export function createInitialProcessRuns(workspaceId: string): WorkspaceProcessRun[] {
-  const now = new Date().toISOString();
+export type ProcessStepDraft = {
+  title: string;
+  input: string;
+  dependsOn: number[];
+  output?: string;
+  kind?: ProcessStepKind;
+  status?: ProcessStepStatus;
+  agentRole?: string;
+  toolName?: string;
+  proposedActionIds?: string[];
+};
 
-  return [
-    {
-      id: crypto.randomUUID(),
-      workspaceId,
-      templateId: "workspace-inspection",
-      title: "Workspace file inspection",
-      mode: "manual",
-      status: "waiting",
-      steps: createProcessStepsFromTemplate(
-        [
-          {
-            title: "Collect source files",
-            input: "Identify the files or folders that need inspection before work begins.",
-            dependsOn: []
-          },
-          {
-            title: "Summarize current state",
-            input: "Record what is known, unclear, and blocked before proposing changes.",
-            dependsOn: [0]
-          }
-        ],
-        now
-      ),
-      history: [createHistoryEntry("Manual process run created from workspace inspection template.", now)],
-      createdAt: now,
-      updatedAt: now
-    }
-  ];
+export function createInitialProcessRuns(workspaceId: string): WorkspaceProcessRun[] {
+  return [createManualProcessRun(workspaceId, "Agent process", null)];
 }
 
 export function createInitialProcessTemplates(): WorkspaceProcessTemplate[] {
@@ -116,6 +102,8 @@ export function createManualProcessRun(
     mode: "manual",
     status: steps.length > 0 ? "waiting" : "blocked",
     steps,
+    edges: deriveGraphEdges(steps),
+    graph: createDefaultProcessGraphLayout(steps),
     history: [
       createHistoryEntry(
         template ? `Manual process run created from ${template.title} template.` : "Manual process run created.",
@@ -127,12 +115,48 @@ export function createManualProcessRun(
   };
 }
 
+export function createCoordinatorProcessRun(
+  workspaceId: string,
+  title: string,
+  steps: ProcessStepDraft[]
+): WorkspaceProcessRun {
+  const now = new Date().toISOString();
+  const createdSteps = createProcessStepsFromDrafts(steps, now);
+
+  return {
+    id: crypto.randomUUID(),
+    workspaceId,
+    templateId: null,
+    title,
+    mode: "demo",
+    status: deriveProcessRunStatus(createdSteps),
+    steps: createdSteps,
+    edges: deriveGraphEdges(createdSteps),
+    graph: createDefaultProcessGraphLayout(createdSteps),
+    history: [
+      createHistoryEntry("Coordinator created a controlled demo run from the command box.", now),
+      createHistoryEntry("No real files, browser sessions, or external systems were changed.", now)
+    ],
+    createdAt: now,
+    updatedAt: now
+  };
+}
+
 export function createManualProcessStep(
   title: string,
   input: string,
-  dependsOn: string[] = []
+  dependsOn: string[] = [],
+  kind: ProcessStepKind = "agent"
 ): WorkspaceProcessStep {
-  return createProcessStep(title, input, dependsOn, new Date().toISOString());
+  return createProcessStep(
+    {
+      title,
+      input,
+      dependsOn,
+      kind
+    },
+    new Date().toISOString()
+  );
 }
 
 export function createHistoryEntry(message: string, createdAt = new Date().toISOString()): ProcessRunHistoryEntry {
@@ -141,6 +165,33 @@ export function createHistoryEntry(message: string, createdAt = new Date().toISO
     message,
     createdAt
   };
+}
+
+export function createDefaultProcessGraphLayout(
+  steps: WorkspaceProcessStep[] = []
+): ProcessGraphLayout {
+  return {
+    nodePositions: Object.fromEntries(
+      steps.map((step, index) => [step.id, { x: 160 + (index % 2) * 260, y: 80 + index * 170 }])
+    ),
+    viewport: { x: 0, y: 0, zoom: 1 },
+    selectedStepId: null,
+    inspectorWidth: 340,
+    historyCollapsed: false,
+    canvasScroll: { scrollLeft: 0, scrollTop: 0 }
+  };
+}
+
+export function deriveGraphEdges(steps: WorkspaceProcessStep[]): ProcessGraphEdge[] {
+  return steps.flatMap((step) =>
+    step.dependsOn.map((source) => ({
+      id: `${source}-${step.id}`,
+      source,
+      target: step.id,
+      sourcePort: "bl" as const,
+      targetPort: "tl" as const
+    }))
+  );
 }
 
 export function deriveProcessRunStatus(steps: WorkspaceProcessStep[]): ProcessRunStatus {
@@ -184,18 +235,20 @@ export function normalizeProcessStepStatus(status: string): ProcessStepStatus {
 }
 
 function createProcessStep(
-  title: string,
-  input: string,
-  dependsOn: string[] | number[],
+  draft: Omit<ProcessStepDraft, "dependsOn"> & { dependsOn: string[] | number[] },
   now: string
 ): WorkspaceProcessStep {
   return {
     id: crypto.randomUUID(),
-    title,
-    status: "waiting",
-    input,
-    output: "",
-    dependsOn: dependsOn.map(String),
+    title: draft.title,
+    kind: draft.kind ?? "manual",
+    status: draft.status ?? "waiting",
+    input: draft.input,
+    output: draft.output ?? "",
+    dependsOn: draft.dependsOn.map(String),
+    agentRole: draft.agentRole,
+    toolName: draft.toolName,
+    proposedActionIds: draft.proposedActionIds ?? [],
     createdAt: now,
     updatedAt: now
   };
@@ -205,7 +258,20 @@ function createProcessStepsFromTemplate(
   steps: Array<{ title: string; input: string; dependsOn: number[] }>,
   now: string
 ): WorkspaceProcessStep[] {
-  const createdSteps = steps.map((step) => createProcessStep(step.title, step.input, [], now));
+  const createdSteps = steps.map((step) =>
+    createProcessStep({ title: step.title, input: step.input, dependsOn: [], kind: "manual" }, now)
+  );
+
+  return createdSteps.map((step, index) => ({
+    ...step,
+    dependsOn: steps[index].dependsOn
+      .map((dependencyIndex) => createdSteps[dependencyIndex]?.id)
+      .filter((dependencyId): dependencyId is string => Boolean(dependencyId))
+  }));
+}
+
+function createProcessStepsFromDrafts(steps: ProcessStepDraft[], now: string): WorkspaceProcessStep[] {
+  const createdSteps = steps.map((step) => createProcessStep({ ...step, dependsOn: [] }, now));
 
   return createdSteps.map((step, index) => ({
     ...step,

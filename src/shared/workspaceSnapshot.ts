@@ -1,3 +1,4 @@
+import type { WorkspaceLayoutState } from "./appShell";
 import type { FileRegistryEntry } from "./fileRegistry";
 import type { WorkspaceProcessRun, WorkspaceProcessTemplate } from "./processRunner";
 import type { SafetyState } from "./safety";
@@ -9,4 +10,5 @@ export type WorkspaceSnapshot = {
   processRuns: WorkspaceProcessRun[];
   processTemplates: WorkspaceProcessTemplate[];
   safety: SafetyState;
+  layout: WorkspaceLayoutState;
 };
