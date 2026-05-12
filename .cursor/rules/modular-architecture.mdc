@@ -1,0 +1,16 @@
+---
+description: Keep WA.AI modular as the desktop automation platform grows
+alwaysApply: true
+---
+
+# Modular Architecture
+
+- Keep feature code in focused modules instead of growing large mixed files.
+- Organize source by durable business function, not by roadmap phase or sprint.
+- Treat roadmap phases as build order only; do not create phase-shaped source folders.
+- Put shared domain types in capability-focused files under `src/shared` so Electron main, preload, and renderer agree on contracts.
+- Put renderer feature state, components, and helpers under `src/renderer/features/<feature>`.
+- Prefer stable feature folders such as `app-shell`, `workspaces`, `file-registry`, `safety`, `process-runner`, `agents`, `documents`, and `browser-automation`.
+- Keep Electron IPC channels narrow and typed; expose only safe APIs through preload.
+- Prefer adding/removing a feature by changing one feature folder plus its explicit shared contract.
+- Avoid coupling UI components directly to Electron implementation details; call feature services or preload APIs.

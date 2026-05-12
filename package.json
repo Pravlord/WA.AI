@@ -1,0 +1,35 @@
+{
+  "name": "wa.ai",
+  "version": "1.0.0",
+  "private": true,
+  "main": "dist/main/main.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "dev": "concurrently -k \"vite --host 127.0.0.1\" \"npm run dev:electron\"",
+    "dev:electron": "wait-on tcp:5173 && tsc -p tsconfig.electron.json && electron dist/main/main.js",
+    "build": "tsc -p tsconfig.electron.json && vite build",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.electron.json",
+    "preview": "vite preview"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@fontsource/jetbrains-mono": "^5.2.8",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "concurrently": "^9.2.1",
+    "electron": "^42.0.1",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.11",
+    "wait-on": "^9.0.6"
+  }
+}
