@@ -1,5 +1,5 @@
 ---
-description: Keep WA.AI modular as the desktop automation platform grows
+description: 
 alwaysApply: true
 ---
 
@@ -14,3 +14,4 @@ alwaysApply: true
 - Keep Electron IPC channels narrow and typed; expose only safe APIs through preload.
 - Prefer adding/removing a feature by changing one feature folder plus its explicit shared contract.
 - Avoid coupling UI components directly to Electron implementation details; call feature services or preload APIs.
+- Keep a well organized codebase

@@ -16,6 +16,63 @@ import {
   deriveProcessRunStatus
 } from "./processRunFactory";
 
+function cloneProcessRun(source: WorkspaceProcessRun): WorkspaceProcessRun {
+  const now = new Date().toISOString();
+  const idMap = new Map<string, string>();
+
+  for (const step of source.steps) {
+    idMap.set(step.id, crypto.randomUUID());
+  }
+
+  const steps = source.steps.map((step) => ({
+    ...step,
+    id: idMap.get(step.id)!,
+    dependsOn: step.dependsOn
+      .map((dependencyId) => idMap.get(dependencyId))
+      .filter((dependencyId): dependencyId is string => Boolean(dependencyId)),
+    createdAt: now,
+    updatedAt: now
+  }));
+
+  const edges: ProcessGraphEdge[] = source.edges.map((edge) => ({
+    id: crypto.randomUUID(),
+    source: idMap.get(edge.source)!,
+    target: idMap.get(edge.target)!,
+    sourcePort: edge.sourcePort,
+    targetPort: edge.targetPort
+  }));
+
+  const nodePositions: Record<string, { x: number; y: number }> = {};
+  for (const [stepId, position] of Object.entries(source.graph.nodePositions)) {
+    const nextId = idMap.get(stepId);
+    if (nextId) {
+      nodePositions[nextId] = position;
+    }
+  }
+
+  const selectedStepId =
+    source.graph.selectedStepId && idMap.has(source.graph.selectedStepId)
+      ? idMap.get(source.graph.selectedStepId)!
+      : null;
+
+  return {
+    ...source,
+    id: crypto.randomUUID(),
+    title: `${source.title} (copy)`,
+    steps,
+    edges,
+    graph: {
+      ...source.graph,
+      nodePositions,
+      selectedStepId
+    },
+    history: [...source.history, createHistoryEntry("Process graph duplicated.", now)],
+    createdAt: now,
+    updatedAt: now,
+    status: deriveProcessRunStatus(steps)
+  };
+}
+
 export type AddProcessStepOptions = {
   position?: { x: number; y: number };
   chainEdgePorts?: { sourcePort: FlowchartCornerPort; targetPort: FlowchartCornerPort };
@@ -30,6 +87,74 @@ export function createProcessRunFromTemplate(
   const run = createManualProcessRun(workspaceId, title, template);
 
   return updateProcessRuns(snapshots, workspaceId, (runs) => [run, ...runs]);
+}
+
+export function addEmptyManualProcessRun(
+  snapshots: WorkspaceSnapshot[],
+  workspaceId: string
+): { snapshots: WorkspaceSnapshot[]; newRunId: string } {
+  const snapshot = snapshots.find((entry) => entry.workspace.id === workspaceId);
+  const ordinal = (snapshot?.processRuns.length ?? 0) + 1;
+  const title = `Process graph ${String(ordinal).padStart(2, "0")}`;
+  const run = finalizeProcessRun(createManualProcessRun(workspaceId, title, null));
+
+  return {
+    snapshots: updateProcessRuns(snapshots, workspaceId, (runs) => [run, ...runs]),
+    newRunId: run.id
+  };
+}
+
+export function duplicateProcessRun(
+  snapshots: WorkspaceSnapshot[],
+  workspaceId: string,
+  runId: string
+): { snapshots: WorkspaceSnapshot[]; newRunId: string } | null {
+  const snapshot = snapshots.find((entry) => entry.workspace.id === workspaceId);
+  const source = snapshot?.processRuns.find((run) => run.id === runId);
+
+  if (!source) {
+    return null;
+  }
+
+  const run = finalizeProcessRun(cloneProcessRun(source));
+
+  return {
+    snapshots: updateProcessRuns(snapshots, workspaceId, (runs) => [run, ...runs]),
+    newRunId: run.id
+  };
+}
+
+export function removeProcessRun(
+  snapshots: WorkspaceSnapshot[],
+  workspaceId: string,
+  runId: string
+): { snapshots: WorkspaceSnapshot[]; focusRunId: string } | null {
+  const snapshot = snapshots.find((entry) => entry.workspace.id === workspaceId);
+  if (!snapshot) {
+    return null;
+  }
+
+  const runs = snapshot.processRuns;
+  const removeIndex = runs.findIndex((run) => run.id === runId);
+
+  if (removeIndex === -1) {
+    return null;
+  }
+
+  let nextRuns = runs.filter((run) => run.id !== runId);
+
+  if (nextRuns.length === 0) {
+    const blank = finalizeProcessRun(createManualProcessRun(workspaceId, "Process graph 01", null));
+    nextRuns = [blank];
+  }
+
+  const focusIndex = Math.min(removeIndex, nextRuns.length - 1);
+  const focusRunId = nextRuns[focusIndex]!.id;
+
+  return {
+    snapshots: updateProcessRuns(snapshots, workspaceId, () => nextRuns),
+    focusRunId
+  };
 }
 
 export function addProcessStep(
@@ -206,7 +331,12 @@ export function updateProcessGraphLayout(
       },
       canvasScroll: {
         scrollLeft: graph.canvasScroll?.scrollLeft ?? run.graph.canvasScroll?.scrollLeft ?? 0,
-        scrollTop: graph.canvasScroll?.scrollTop ?? run.graph.canvasScroll?.scrollTop ?? 0
+        scrollTop: graph.canvasScroll?.scrollTop ?? run.graph.canvasScroll?.scrollTop ?? 0,
+        ...(graph.canvasScroll && "scale" in graph.canvasScroll && graph.canvasScroll.scale !== undefined
+          ? { scale: graph.canvasScroll.scale }
+          : run.graph.canvasScroll?.scale !== undefined
+            ? { scale: run.graph.canvasScroll.scale }
+            : {})
       }
     }
   }));

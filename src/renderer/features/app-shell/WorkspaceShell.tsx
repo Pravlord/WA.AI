@@ -18,6 +18,9 @@ import { mergePinnedFileState } from "../file-registry/fileRegistryState";
 import { ManualProcessRunner } from "../process-runner/components/ManualProcessRunner";
 import {
   addProcessStep,
+  addEmptyManualProcessRun,
+  duplicateProcessRun,
+  removeProcessRun,
   updateProcessGraphLayout,
   updateProcessRunEdges
 } from "../process-runner/processRunActions";
@@ -45,12 +48,15 @@ import {
   writeWorkspaceSnapshots
 } from "../workspaces/workspaceStorage";
 import { ActivityBar, type WorkspaceView } from "./components/ActivityBar";
+import { ApplicationMenuBar } from "./components/ApplicationMenuBar";
 import { AppShellLayout } from "./components/AppShellLayout";
 import { ChatRail } from "./components/ChatRail";
 import { EmptyWorkspace } from "./components/EmptyWorkspace";
+import { browserWorkspaceApi } from "../workspaces/browserWorkspaceApi";
 import { ExplorerRail } from "./components/ExplorerRail";
 import { FilePreview } from "./components/FilePreview";
 import { MainBlockComposer } from "./components/MainBlockComposer";
+import { PreferencesDialog } from "../preferences/components/PreferencesDialog";
 
 export function WorkspaceShell() {
   const [snapshots, setSnapshots] = useState<WorkspaceSnapshot[]>(readWorkspaceSnapshots);
@@ -61,6 +67,7 @@ export function WorkspaceShell() {
   const [coordinatorResults, setCoordinatorResults] = useState<Record<string, CoordinatorCommandResult[]>>({});
   const [scanError, setScanError] = useState<string | null>(null);
   const [openWorkspaceError, setOpenWorkspaceError] = useState<string | null>(null);
+  const [preferencesOpen, setPreferencesOpen] = useState(false);
 
   const workspaces = useMemo(() => getWorkspaces(snapshots), [snapshots]);
   const activeSnapshot = useMemo(
@@ -83,16 +90,20 @@ export function WorkspaceShell() {
   async function handleOpenWorkspace() {
     setOpenWorkspaceError(null);
 
-    const api = window.workspaceApi;
+    let api = window.workspaceApi;
     if (typeof api?.selectFolder !== "function") {
-      const inElectron =
-        typeof navigator !== "undefined" && navigator.userAgent.includes("Electron");
-      setOpenWorkspaceError(
-        inElectron
-          ? "Folder selection is unavailable because the preload bridge did not load. If this persists, check the terminal for a preload error when the window opens."
-          : "Folder selection only works in the desktop app. Use the WA.AI window from npm run dev, not a normal browser tab or embedded preview at 127.0.0.1:5173."
-      );
-      return;
+      if (typeof window.showDirectoryPicker === "function") {
+        api = browserWorkspaceApi;
+      } else {
+        const inElectron =
+          typeof navigator !== "undefined" && navigator.userAgent.includes("Electron");
+        setOpenWorkspaceError(
+          inElectron
+            ? "Folder selection is unavailable because the preload bridge did not load. If this persists, check the terminal for a preload error when the window opens."
+            : "Folder selection only works in the desktop app. Use the WA.AI window from npm run dev, not a normal browser tab or embedded preview at 127.0.0.1:5173."
+        );
+        return;
+      }
     }
 
     try {
@@ -299,7 +310,10 @@ export function WorkspaceShell() {
   async function scanWorkspaceFiles(workspaceId: string, folderPath: string) {
     try {
       setScanError(null);
-      const api = window.workspaceApi;
+      const api =
+        window.workspaceApi ??
+        (typeof window.showDirectoryPicker === "function" ? browserWorkspaceApi : undefined);
+
       if (typeof api?.scanFolder !== "function") {
         setScanError("Workspace scanning requires the preload bridge (open the app via npm run dev → Electron).");
         return [];
@@ -354,6 +368,39 @@ export function WorkspaceShell() {
               updateProcessGraphLayout(currentSnapshots, workspaceId, runId, graph)
             )
           }
+          onAddEmptyProcessGraph={() => {
+            let newRunId = "";
+            updateProcessRuns((currentSnapshots) => {
+              const next = addEmptyManualProcessRun(currentSnapshots, workspaceId);
+              newRunId = next.newRunId;
+              return next.snapshots;
+            });
+            return newRunId;
+          }}
+          onDuplicateProcessGraph={(runId) => {
+            let newRunId: string | null = null;
+            updateProcessRuns((currentSnapshots) => {
+              const next = duplicateProcessRun(currentSnapshots, workspaceId, runId);
+              if (!next) {
+                return currentSnapshots;
+              }
+              newRunId = next.newRunId;
+              return next.snapshots;
+            });
+            return newRunId;
+          }}
+          onRemoveProcessGraph={(runId) => {
+            let focusRunId: string | null = null;
+            updateProcessRuns((currentSnapshots) => {
+              const next = removeProcessRun(currentSnapshots, workspaceId, runId);
+              if (!next) {
+                return currentSnapshots;
+              }
+              focusRunId = next.focusRunId;
+              return next.snapshots;
+            });
+            return focusRunId;
+          }}
         />
       );
     }
@@ -420,22 +467,11 @@ export function WorkspaceShell() {
 
   return (
     <main className="app-shell">
-      <header className="app-menu-bar">
-        <nav aria-label="Application menu">
-          <button type="button">File</button>
-          <button type="button">Edit</button>
-          <button type="button">Selection</button>
-          <button type="button">View</button>
-          <button type="button">Go</button>
-          <button type="button">Run</button>
-          <button type="button">Terminal</button>
-          <button type="button">Help</button>
-        </nav>
-        <strong>WA.AI</strong>
-        <button className="primary-button" type="button" onClick={handleOpenWorkspace}>
-          Open Folder
-        </button>
-      </header>
+      <ApplicationMenuBar
+        onOpenPreferences={() => setPreferencesOpen(true)}
+        onOpenWorkspace={handleOpenWorkspace}
+      />
+      <PreferencesDialog open={preferencesOpen} onClose={() => setPreferencesOpen(false)} />
 
       <nav className="workspace-tabs" aria-label="Open workspaces">
         {workspaces.length === 0 ? (

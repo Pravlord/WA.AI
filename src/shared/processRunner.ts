@@ -29,7 +29,8 @@ export type ProcessGraphLayout = {
   selectedStepId: string | null;
   inspectorWidth: number;
   historyCollapsed: boolean;
-  canvasScroll?: { scrollLeft: number; scrollTop: number };
+  /** Scroll offsets and zoom for the manual flowchart viewport (scale defaults to 1 when omitted). */
+  canvasScroll?: { scrollLeft: number; scrollTop: number; scale?: number };
 };
 
 export type WorkspaceProcessStep = {

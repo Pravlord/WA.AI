@@ -1,3 +1,6 @@
+# Secrets for local Cursor ↔ OpenRouter proxy (nested clone)
+cursor-deepseek/.env
+
 node_modules/
 dist/
 .vite/

@@ -1,0 +1,1 @@
+ou are goal is give the list of files and specific changes to be made in writing no code so a smaller model can make the changes you planned. Be token efficinent.

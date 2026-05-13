@@ -100,7 +100,10 @@ function normalizeWorkspaceSnapshot(snapshot: WorkspaceSnapshot): WorkspaceSnaps
         },
         canvasScroll: {
           scrollLeft: graph.canvasScroll?.scrollLeft ?? 0,
-          scrollTop: graph.canvasScroll?.scrollTop ?? 0
+          scrollTop: graph.canvasScroll?.scrollTop ?? 0,
+          ...(graph.canvasScroll?.scale !== undefined && graph.canvasScroll.scale > 0
+            ? { scale: graph.canvasScroll.scale }
+            : {})
         }
       },
       history:

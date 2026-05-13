@@ -14,7 +14,8 @@
     "dev:electron": "wait-on tcp:5173 && tsc -p tsconfig.electron.json && electron dist/main/main.js",
     "build": "tsc -p tsconfig.electron.json && vite build",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.electron.json",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "proxy:openrouter": "cd cursor-deepseek && \"C:\\Program Files\\Go\\bin\\go.exe\" run proxy-openrouter.go"
   },
   "keywords": [],
   "author": "",
@@ -22,6 +23,7 @@
   "description": "",
   "dependencies": {
     "@fontsource/jetbrains-mono": "^5.2.8",
+    "lucide-react": "^1.14.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6"
   },
